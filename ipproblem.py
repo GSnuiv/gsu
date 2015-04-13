@@ -169,7 +169,14 @@ class IPProblem(object):
             self.getz(wm-vm)):
             Avp,Avm=self.pm_split(self.A*v)
             Awp,Avm=self.pm_split(self.A*w)
-            return self.getz(Awp-Avp)
+            if self.getz(Awp-Avp):
+                q=min( a_i//b_i for a_i,b_i in zip(itertools.chain(wp,wm,Awp),
+                                                    itertools.chain(vp,vm,Avp)) if b_i !=0)
+                assert(q>0) # remove when stable.
+                print "q=%d" %q
+                return q
+            else:
+                return False
         else:
             return False
 
@@ -180,10 +187,13 @@ class IPProblem(object):
         vector of `B`
         """
         for (i,v) in enumerate(B):
-            if self.can_reduce_by(v,w):
-                return (i,1)
-            elif self.can_reduce_by(v,-w):
-                return (i,-1)
+            t=self.can_reduce_by(v,w)
+            if t:
+                return (i,1,t)
+            else:
+                t=self.can_reduce_by(v,-w)
+                if t:
+                    return (i,-1,t)
         return False
 
 
@@ -203,7 +213,7 @@ class IPProblem(object):
             P=self.can_reduce_by_set(r,B)
             if P:
                 # verbose("->reduced by index %s" % P[0], 2)
-                r=P[1]*r-B[P[0]]
+                r=P[1]*r-P[2]*B[P[0]]
                 reducible=not r.is_zero()
             else:
                 reducible=False
